@@ -1,90 +1,84 @@
 @extends('admin.layout')
 
-@section('title','Lista firm')
+@section('title','Firmy')
 
 @section('content')
-    <h2 class="mb-3 text-center">Lista zarejestrowanych firm</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Firmy</h2>
+        <a href="{{ route('admin.companies.create') }}" class="btn btn-primary">➕ Dodaj firmę</a>
+    </div>
 
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    <!-- Wyszukiwarka -->
-    <form method="GET" action="{{ route('admin.companies.index') }}" class="row g-2 mb-3">
-        <div class="col-md-4">
-            <input type="text" name="search" value="{{ request('search') }}" 
-                   placeholder="Szukaj po ID lub telefonie" class="form-control">
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Szukaj</button>
-        </div>
-        <div class="col-md-2">
-            <a href="{{ route('admin.companies.index') }}" class="btn btn-secondary w-100">Reset</a>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ route('admin.companies.create') }}" class="btn btn-success">➕ Dodaj firmę</a>
+    <!-- 🔍 Wyszukiwarka -->
+    <form method="GET" action="{{ route('admin.companies.index') }}" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Szukaj po ID lub telefonie">
+            <button class="btn btn-outline-secondary" type="submit">Szukaj</button>
         </div>
     </form>
 
-    <div class="card shadow-sm p-4">
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nazwa</th>
-                    <th>Email</th>
-                    <th>NIP</th>
-                    <th>Telefon</th>
-                    <th>Miasto</th>
-                    <th>Status</th>
-                    <th>Akcje</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($companies as $company)
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
                     <tr>
-                        <td>{{ $company->id }}</td>
-                        <td>{{ $company->name }}</td>
-                        <td>{{ $company->email }}</td>
-                        <td>{{ $company->nip }}</td>
-                        <td>{{ $company->phone }}</td>
-                        <td>{{ $company->city }}</td>
-                        <td>
-                            @if($company->is_active)
-                                <span class="badge bg-success">Aktywna</span>
-                            @else
-                                <span class="badge bg-danger">Zawieszona</span>
-                            @endif
-                        </td>
-                        <td>
-                            <a href="{{ route('admin.companies.show', $company->id) }}" class="btn btn-sm btn-primary">Szczegóły</a>
-                            <a href="{{ route('admin.companies.edit', $company->id) }}" class="btn btn-sm btn-warning">Edytuj</a>
-
-                            <form method="POST" action="{{ route('admin.companies.resetPassword', $company->id) }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-info">Reset hasła</button>
-                            </form>
-
-                            <form method="POST" action="{{ route('admin.companies.toggleStatus', $company->id) }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-secondary">
-                                    {{ $company->is_active ? 'Zawieś' : 'Aktywuj' }}
-                                </button>
-                            </form>
-
-                            <form method="POST" action="{{ route('admin.companies.destroy', $company->id) }}" class="d-inline" onsubmit="return confirm('Na pewno usunąć firmę?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">Usuń</button>
-                            </form>
-                        </td>
+                        <th>ID</th>
+                        <th>Kod</th>
+                        <th>Nazwa</th>
+                        <th>Email</th>
+                        <th>Telefon</th>
+                        <th>Kurs pkt</th>
+                        <th>Aktywna</th>
+                        <th>Dodano</th>
+                        <th>Akcje</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="text-center">Brak zarejestrowanych firm</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse($companies as $c)
+                        <tr>
+                            <td>{{ $c->id }}</td>
+                            <td><span class="badge bg-secondary">{{ $c->company_code }}</span></td>
+                            <td>{{ $c->name }}</td>
+                            <td>{{ $c->email }}</td>
+                            <td>{{ $c->phone ?? '-' }}</td>
+                            <td>{{ number_format($c->points_rate,2) }}</td>
+                            <td>
+                                @if($c->is_active)
+                                    <span class="badge bg-success">TAK</span>
+                                @else
+                                    <span class="badge bg-danger">NIE</span>
+                                @endif
+                            </td>
+                            <td>{{ $c->created_at->format('Y-m-d') }}</td>
+                            <td>
+                                <a href="{{ route('admin.companies.edit', $c->id) }}" class="btn btn-sm btn-warning">✏️ Edytuj</a>
+                                <form action="{{ route('admin.companies.resetPassword', $c->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-info">🔑 Reset hasła</button>
+                                </form>
+                                <form action="{{ route('admin.companies.toggle', $c->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-secondary">
+                                        {{ $c->is_active ? '⏸️ Zawieś' : '▶️ Aktywuj' }}
+                                    </button>
+                                </form>
+                                <form action="{{ route('admin.companies.destroy', $c->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Na pewno usunąć tę firmę?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">🗑️ Usuń</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">Brak firm w bazie.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        {{ $companies->links() }}
     </div>
 @endsection

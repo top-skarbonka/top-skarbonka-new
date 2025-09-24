@@ -33,12 +33,12 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/admin/companies', [AdminCompanyController::class, 'index'])->name('admin.companies.index');
     Route::get('/admin/companies/create', [AdminCompanyController::class, 'create'])->name('admin.companies.create');
     Route::post('/admin/companies', [AdminCompanyController::class, 'store'])->name('admin.companies.store');
-    Route::get('/admin/companies/{id}', [AdminCompanyController::class, 'show'])->name('admin.companies.show');
+    Route::get('/admin/companies/{company}/edit', [AdminCompanyController::class, 'edit'])->name('admin.companies.edit');
+    Route::put('/admin/companies/{company}', [AdminCompanyController::class, 'update'])->name('admin.companies.update');
+    Route::delete('/admin/companies/{company}', [AdminCompanyController::class, 'destroy'])->name('admin.companies.destroy');
+    Route::post('/admin/companies/{company}/toggle', [AdminCompanyController::class, 'toggle'])->name('admin.companies.toggle');
+    Route::post('/admin/companies/{company}/reset-password', [AdminCompanyController::class, 'resetPassword'])->name('admin.companies.resetPassword');
 
-    // Wylogowanie
+    // Wylogowanie admina
     Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 });
-
-// ------------------- Client Panel -------------------
-Route::get('/client/register', [ClientRegisterController::class, 'showForm'])->name('client.register.form');
-Route::post('/client/register', [ClientRegisterController::class, 'register'])->name('client.register.submit');

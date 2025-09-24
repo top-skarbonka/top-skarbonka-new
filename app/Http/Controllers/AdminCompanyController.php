@@ -19,7 +19,8 @@ class AdminCompanyController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('id', $search)
-                  ->orWhere('phone', 'LIKE', "%{$search}%");
+                  ->orWhere('phone', 'LIKE', "%{$search}%")
+                  ->orWhere('name', 'LIKE', "%{$search}%");
         }
 
         $companies = $query->latest()->paginate(15);
@@ -40,121 +41,121 @@ class AdminCompanyController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name'        => 'required|string|max:255',
-            'postal_code' => 'required|string|max:20',
-            'city'        => 'required|string|max:255',
-            'nip'         => 'required|string|max:20|unique:companies',
-            'phone'       => 'nullable|string|max:20',
-            'email'       => 'required|email|unique:companies',
-            'password'    => 'required|string|min:6|confirmed',
-            'points_rate' => 'required|numeric|min:0.01',
-            'agreement_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'rules_file'     => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        $validated = $request->validate([
+            'name'         => ['required','string','max:255'],
+            'postal_code'  => ['required','string','max:20'],
+            'city'         => ['required','string','max:255'],
+            'nip'          => ['required','string','max:20','unique:companies,nip'],
+            'phone'        => ['nullable','string','max:30'],
+            'email'        => ['required','email','max:255','unique:companies,email'],
+            'points_rate'  => ['required','numeric','min:0.01'],
+            'agreement_file' => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
+            'rules_file'     => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
         ]);
 
-        $company = new Company($request->except(['password','agreement_file','rules_file']));
-        $company->password = Hash::make($request->password);
-        $company->company_code = strtoupper(Str::random(5));
+        // Wygeneruj unikalny kod firmy (5 znaków)
+        do {
+            $companyCode = strtoupper(Str::random(5));
+        } while (Company::where('company_code', $companyCode)->exists());
 
+        // Wygeneruj hasło
+        $plainPassword = Str::random(10);
+
+        $company = new Company();
+        $company->company_code = $companyCode;
+        $company->name = $validated['name'];
+        $company->postal_code = $validated['postal_code'];
+        $company->city = $validated['city'];
+        $company->nip = $validated['nip'];
+        $company->phone = $validated['phone'] ?? null;
+        $company->email = $validated['email'];
+        $company->points_rate = $validated['points_rate'];
+        $company->password = Hash::make($plainPassword);
+        $company->is_active = true;
+
+        // Zapis plików
         if ($request->hasFile('agreement_file')) {
-            $company->agreement_file = $request->file('agreement_file')->store('agreements', 'public');
+            $company->agreement_file = $request->file('agreement_file')->store('agreements','public');
         }
-
         if ($request->hasFile('rules_file')) {
-            $company->rules_file = $request->file('rules_file')->store('rules', 'public');
+            $company->rules_file = $request->file('rules_file')->store('rules','public');
         }
 
         $company->save();
 
-        return redirect()->route('admin.companies.index')->with('success', 'Firma została dodana.');
+        return redirect()->route('admin.companies.index')
+            ->with('success', "Firma została dodana. Hasło: <b>{$plainPassword}</b>");
     }
 
     /**
-     * Szczegóły firmy
+     * Formularz edycji firmy
      */
-    public function show($id)
+    public function edit(Company $company)
     {
-        $company = Company::findOrFail($id);
-        return view('admin.companies.show', compact('company'));
-    }
-
-    /**
-     * Formularz edycji
-     */
-    public function edit($id)
-    {
-        $company = Company::findOrFail($id);
         return view('admin.companies.edit', compact('company'));
     }
 
     /**
-     * Zapis edycji
+     * Aktualizacja firmy
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Company $company)
     {
-        $company = Company::findOrFail($id);
-
-        $request->validate([
-            'name'        => 'required|string|max:255',
-            'postal_code' => 'required|string|max:20',
-            'city'        => 'required|string|max:255',
-            'nip'         => 'required|string|max:20|unique:companies,nip,'.$company->id,
-            'phone'       => 'nullable|string|max:20',
-            'email'       => 'required|email|unique:companies,email,'.$company->id,
-            'points_rate' => 'required|numeric|min:0.01',
-            'agreement_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'rules_file'     => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        $validated = $request->validate([
+            'name'         => ['required','string','max:255'],
+            'postal_code'  => ['required','string','max:20'],
+            'city'         => ['required','string','max:255'],
+            'nip'          => ['required','string','max:20','unique:companies,nip,'.$company->id],
+            'phone'        => ['nullable','string','max:30'],
+            'email'        => ['required','email','max:255','unique:companies,email,'.$company->id],
+            'points_rate'  => ['required','numeric','min:0.01'],
+            'agreement_file' => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
+            'rules_file'     => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
         ]);
 
-        $company->fill($request->except(['agreement_file','rules_file']));
+        $company->update($validated);
 
+        // Zapis plików
         if ($request->hasFile('agreement_file')) {
-            $company->agreement_file = $request->file('agreement_file')->store('agreements', 'public');
+            $company->agreement_file = $request->file('agreement_file')->store('agreements','public');
         }
-
         if ($request->hasFile('rules_file')) {
-            $company->rules_file = $request->file('rules_file')->store('rules', 'public');
+            $company->rules_file = $request->file('rules_file')->store('rules','public');
         }
 
         $company->save();
 
-        return redirect()->route('admin.companies.index')->with('success', 'Firma została zaktualizowana.');
+        return redirect()->route('admin.companies.index')->with('success','Dane firmy zaktualizowane.');
     }
 
     /**
      * Reset hasła
      */
-    public function resetPassword($id)
+    public function resetPassword(Company $company)
     {
-        $company = Company::findOrFail($id);
-        $newPassword = Str::random(8);
-        $company->password = Hash::make($newPassword);
+        $plainPassword = Str::random(10);
+        $company->password = Hash::make($plainPassword);
         $company->save();
 
-        return redirect()->route('admin.companies.index')->with('success', "Hasło firmy zostało zresetowane. Nowe hasło: {$newPassword}");
+        return back()->with('success', "Hasło dla firmy {$company->name} zostało zresetowane. Nowe hasło: <b>{$plainPassword}</b>");
     }
 
     /**
-     * Aktywacja / zawieszenie firmy
+     * Zawieszenie / aktywacja firmy
      */
-    public function toggleStatus($id)
+    public function toggleActive(Company $company)
     {
-        $company = Company::findOrFail($id);
         $company->is_active = !$company->is_active;
         $company->save();
 
-        return redirect()->route('admin.companies.index')->with('success', 'Status firmy został zmieniony.');
+        return back()->with('success', "Status firmy {$company->name} został zmieniony.");
     }
 
     /**
      * Usuwanie firmy
      */
-    public function destroy($id)
+    public function destroy(Company $company)
     {
-        $company = Company::findOrFail($id);
         $company->delete();
-
-        return redirect()->route('admin.companies.index')->with('success', 'Firma została usunięta.');
+        return back()->with('success',"Firma została usunięta.");
     }
 }
