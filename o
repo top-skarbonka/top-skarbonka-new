@@ -13,14 +13,15 @@ return [
             'provider' => 'users',
         ],
 
-        'admin' => [
-            'driver' => 'session',
-            'provider' => 'admins',
-        ],
-
         'company' => [
             'driver' => 'session',
             'provider' => 'companies',
+        ],
+
+        // 👇 nowy guard dla panelu admina
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
         ],
     ],
 
@@ -30,33 +31,35 @@ return [
             'model' => App\Models\User::class,
         ],
 
-        'admins' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\Admin::class,
-        ],
-
         'companies' => [
             'driver' => 'eloquent',
             'model' => App\Models\Company::class,
+        ],
+
+        // 👇 nowy provider dla adminów
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Admin::class,
         ],
     ],
 
     'passwords' => [
         'users' => [
             'provider' => 'users',
-            'table' => 'password_resets',
+            'table' => 'password_reset_tokens',
             'expire' => 60,
+            'throttle' => 60,
         ],
+
+        // 👇 jeśli chcesz reset hasła dla adminów w przyszłości
         'admins' => [
             'provider' => 'admins',
-            'table' => 'password_resets',
+            'table' => 'password_reset_tokens',
             'expire' => 60,
-        ],
-        'companies' => [
-            'provider' => 'companies',
-            'table' => 'password_resets',
-            'expire' => 60,
+            'throttle' => 60,
         ],
     ],
+
+    'password_timeout' => 10800,
 
 ];

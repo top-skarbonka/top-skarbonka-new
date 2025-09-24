@@ -10,18 +10,17 @@ class CompanySeeder extends Seeder
 {
     public function run(): void
     {
-        Company::updateOrCreate(
-            ['email' => 'firma@test.pl'],
-            [
-                'name'          => 'Firma Testowa',
-                'postal_code'   => '00-000',
-                'city'          => 'Warszawa',
-                'street'        => 'Testowa 123',
-                'nip'           => '1234567890',
-                'phone'         => '123456789',
-                'exchange_rate' => 0.50,
-                'password'      => Hash::make('haslo12345'),
-            ]
-        );
+        Company::create([
+            'company_id'   => str_pad(rand(0, 99999), 5, '0', STR_PAD_LEFT), // losowe 5 cyfr
+            'name'         => 'Firma Testowa',
+            'email'        => 'firma@test.pl',
+            'postal_code'  => '00-000',
+            'city'         => 'Warszawa',
+            'street'       => 'Testowa 123',
+            'nip'          => '1234567890',
+            'phone'        => '123456789',
+            'exchange_rate'=> 0.5,
+            'password'     => Hash::make('haslo123'),
+        ]);
     }
 }

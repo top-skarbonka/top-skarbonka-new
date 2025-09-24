@@ -5,24 +5,18 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class Company extends Authenticatable
+class Admin extends Authenticatable
 {
     use Notifiable;
 
     protected $fillable = [
-        'company_id',
         'name',
-        'city',
-        'postal_code',
-        'street',
-        'nip',
         'email',
-        'phone',
-        'exchange_rate',
         'password',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 }
