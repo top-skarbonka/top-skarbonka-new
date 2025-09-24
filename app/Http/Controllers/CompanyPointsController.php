@@ -2,52 +2,50 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
-use App\Models\TopPointTransaction;
 use Illuminate\Http\Request;
+use App\Models\Client;
+use App\Models\Company;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class CompanyPointsController extends Controller
 {
+    // Formularz dodawania punktów
     public function create(Request $request)
     {
-        // Można przekazać client_id w URL (np. z QR), ale tutaj ręcznie
-        return view('company.points.create');
+        $clientId = $request->get('client_id'); // ID klienta z QR
+        return view('company.points.create', compact('clientId'));
     }
 
+    // Zapis punktów
     public function store(Request $request)
     {
-        $company = Auth::guard('company')->user();
-
         $validated = $request->validate([
-            'client_id' => ['required', 'uuid', 'exists:clients,id'],
-            'receipt_number' => [
-                'required', 'string', 'max:64',
-                Rule::unique('top_point_transactions')->where(function ($q) use ($company) {
-                    return $q->where('company_id', $company->id);
-                }),
-            ],
-            'amount_pln' => ['required', 'numeric', 'min:0.01', 'max:1000000'],
+            'client_id' => 'required|string',
+            'receipt_number' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
         ]);
 
-        $points = round($validated['amount_pln'] * (float)$company->points_rate, 2);
+        // Szukamy klienta po jego client_code
+        $client = Client::where('client_code', $validated['client_id'])->firstOrFail();
 
-        // Zapis transakcji
-        TopPointTransaction::create([
-            'client_id'      => $validated['client_id'],
-            'company_id'     => $company->id,
-            'receipt_number' => $validated['receipt_number'],
-            'amount_pln'     => $validated['amount_pln'],
-            'points'         => $points,
-        ]);
+        // Kurs przypisany firmie
+        $company = Auth::guard('company')->user();
+        $points = $validated['amount'] * $company->points_rate;
 
         // Aktualizacja salda klienta
-        $client = Client::findOrFail($validated['client_id']);
-        $client->points_balance = round(((float)$client->points_balance + $points), 2);
+        $client->points_balance += $points;
         $client->save();
 
-        return redirect()->route('company.points.create')
-            ->with('success', 'Dodano punkty: '.$points.' (kurs: '.$company->points_rate.' pkt / 1 zł)');
+        // Zapis transakcji
+        Transaction::create([
+            'client_id' => $client->id,
+            'company_id' => $company->id,
+            'receipt_number' => $validated['receipt_number'],
+            'amount' => $validated['amount'],
+            'points' => $points,
+        ]);
+
+        return redirect()->route('company.dashboard')->with('success', 'Punkty zostały przyznane!');
     }
 }

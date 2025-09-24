@@ -7,10 +7,6 @@
 <body>
     <h1>Przyznaj punkty klientowi</h1>
 
-    @if(session('success'))
-        <p style="color:green;">{{ session('success') }}</p>
-    @endif
-
     @if ($errors->any())
         <div style="color:red;">
             <ul>
@@ -25,27 +21,22 @@
         @csrf
 
         <div>
-            <label>ID klienta (UUID):</label>
-            <input type="text" name="client_id" value="{{ old('client_id') }}" required>
+            <label>ID klienta:</label><br>
+            <input type="text" name="client_id" value="{{ $clientId ?? '' }}" readonly>
         </div>
 
         <div>
-            <label>Numer paragonu/FV:</label>
-            <input type="text" name="receipt_number" value="{{ old('receipt_number') }}" required>
+            <label>Numer paragonu/FV:</label><br>
+            <input type="text" name="receipt_number" required>
         </div>
 
         <div>
-            <label>Kwota (PLN):</label>
-            <input type="number" step="0.01" min="0.01" name="amount_pln" value="{{ old('amount_pln') }}" required>
+            <label>Kwota (PLN):</label><br>
+            <input type="number" step="0.01" name="amount" required>
         </div>
 
-        <div style="margin-top:12px;">
-            <button type="submit">Przyznaj punkty</button>
-        </div>
+        <br>
+        <button type="submit">Dodaj punkty</button>
     </form>
-
-    <p style="margin-top:20px;">
-        <a href="{{ route('company.dashboard') }}">← Powrót do panelu firmy</a>
-    </p>
 </body>
 </html>

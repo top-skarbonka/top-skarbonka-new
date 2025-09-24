@@ -9,20 +9,25 @@ class Company extends Authenticatable
 {
     use Notifiable;
 
+    protected $guard = 'company';
+
     protected $fillable = [
         'company_id',
         'name',
-        'city',
         'postal_code',
+        'city',
         'street',
         'nip',
         'email',
         'phone',
-        'exchange_rate',
         'password',
+        'exchange_rate',
+        'agreement_file',
+        'regulations_file',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 }

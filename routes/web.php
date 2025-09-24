@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CompanyAuthController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\CompanyPointsController;
+use App\Http\Controllers\ClientRegisterController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminCompanyController;
 
 // ------------------- Company Auth -------------------
 Route::get('/company/login', [CompanyAuthController::class, 'showLoginForm'])->name('company.login');
@@ -13,7 +16,7 @@ Route::middleware('auth:company')->group(function () {
     Route::get('/company/dashboard', [CompanyAuthController::class, 'dashboard'])->name('company.dashboard');
     Route::post('/company/logout', [CompanyAuthController::class, 'logout'])->name('company.logout');
 
-    // --------- Nowe: przyznawanie punktów ----------
+    // --------- Przyznawanie punktów ----------
     Route::get('/company/points/new', [CompanyPointsController::class, 'create'])->name('company.points.create');
     Route::post('/company/points', [CompanyPointsController::class, 'store'])->name('company.points.store');
 });
@@ -23,9 +26,19 @@ Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name(
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
 
 Route::middleware('auth:admin')->group(function () {
-    Route::get('/admin/dashboard', [AdminAuthController::class, 'dashboard'])->name('admin.dashboard');
-    Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+    // Dashboard
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
-    Route::get('/admin/register-company', [AdminAuthController::class, 'showRegisterForm'])->name('admin.register.company');
-    Route::post('/admin/register-company', [AdminAuthController::class, 'registerCompany'])->name('admin.register.company.submit');
+    // Firmy
+    Route::get('/admin/companies', [AdminCompanyController::class, 'index'])->name('admin.companies.index');
+    Route::get('/admin/companies/create', [AdminCompanyController::class, 'create'])->name('admin.companies.create');
+    Route::post('/admin/companies', [AdminCompanyController::class, 'store'])->name('admin.companies.store');
+    Route::get('/admin/companies/{id}', [AdminCompanyController::class, 'show'])->name('admin.companies.show');
+
+    // Wylogowanie
+    Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 });
+
+// ------------------- Client Panel -------------------
+Route::get('/client/register', [ClientRegisterController::class, 'showForm'])->name('client.register.form');
+Route::post('/client/register', [ClientRegisterController::class, 'register'])->name('client.register.submit');
